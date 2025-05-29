@@ -5,6 +5,7 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { ProposalData, LETTER_TEMPLATES, LetterTemplate } from '@/types';
+import jsPDF from 'jspdf';
 
 interface LetterGeneratorProps {
   data: ProposalData;
@@ -97,18 +98,44 @@ CPF: ${selectedTemplate.signatoryCpf}
   };
 
   const downloadPDF = () => {
-    // Em uma implementação real, você usaria uma biblioteca como jsPDF
-    // para gerar o PDF da carta
+    if (!generatedLetter || !selectedTemplate) return;
+
     console.log('Gerando PDF da carta...');
+
+    const doc = new jsPDF('p', 'mm', 'a4');
     
-    // Simula download
-    const element = document.createElement('a');
-    const file = new Blob([generatedLetter || ''], { type: 'text/plain' });
-    element.href = URL.createObjectURL(file);
-    element.download = `carta-reserva-margem-${data.proposalNumber}.txt`;
-    document.body.appendChild(element);
-    element.click();
-    document.body.removeChild(element);
+    // Configurar fonte
+    doc.setFont('helvetica', 'normal');
+    doc.setFontSize(12);
+    
+    // Dividir o texto em linhas
+    const lines = generatedLetter.split('\n');
+    let y = 20; // Posição Y inicial
+    const lineHeight = 5;
+    const maxWidth = 180; // Largura máxima do texto
+    
+    lines.forEach(line => {
+      if (line.trim() === '') {
+        y += lineHeight / 2; // Espaço menor para linhas vazias
+        return;
+      }
+      
+      // Quebrar linha se for muito longa
+      const splitLines = doc.splitTextToSize(line, maxWidth);
+      
+      splitLines.forEach((splitLine: string) => {
+        if (y > 280) { // Se próximo do fim da página
+          doc.addPage();
+          y = 20;
+        }
+        doc.text(splitLine, 15, y);
+        y += lineHeight;
+      });
+    });
+    
+    // Salvar o PDF
+    const fileName = `carta-reserva-margem-${data.proposalNumber}.pdf`;
+    doc.save(fileName);
   };
 
   return (
@@ -180,7 +207,7 @@ CPF: ${selectedTemplate.signatoryCpf}
                 className="flex items-center space-x-2"
               >
                 <Download className="h-4 w-4" />
-                <span>Download</span>
+                <span>Download PDF</span>
               </Button>
             )}
           </div>
