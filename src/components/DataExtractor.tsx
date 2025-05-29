@@ -4,6 +4,7 @@ import { Search, CheckCircle, AlertCircle } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { ProposalData } from '@/types';
+import { extractDataFromPDF } from '@/utils/pdfExtractor';
 
 interface DataExtractorProps {
   file: File;
@@ -16,34 +17,32 @@ const DataExtractor: React.FC<DataExtractorProps> = ({
   onDataExtracted,
   isProcessing
 }) => {
-  const extractDataFromPDF = async () => {
-    // Simula a extração de dados do PDF
-    // Em uma implementação real, você usaria uma biblioteca como pdf-lib ou pdf2pic
-    // e um serviço de OCR para extrair os dados
-    
+  const handleExtractData = async () => {
     console.log('Iniciando extração de dados do PDF:', file.name);
     
-    // Dados mockados baseados no exemplo fornecido
-    const mockData: ProposalData = {
-      clientName: 'MARIA GICELMA OLIVEIRA DA SILVA',
-      cpf: '005.534.623-50',
-      rg: '191849520010',
-      agencia: '2651',
-      conta: '23.321',
-      loanValue: '77.995,11',
-      installmentValue: '2.267,16',
-      installmentCount: '120',
-      firstInstallmentDate: '25/07/2025',
-      lastInstallmentDate: '25/06/2035',
-      proposalNumber: '181816970',
-      conventionName: 'SECRETARIA MUNICIPAL DE EDUCACAO - MUNICIP',
-      conventionCnpj: '31.043.226/0001-01'
-    };
-
-    // Simula tempo de processamento
-    await new Promise(resolve => setTimeout(resolve, 2000));
-    
-    onDataExtracted(mockData);
+    try {
+      const extractedData = await extractDataFromPDF(file);
+      onDataExtracted(extractedData);
+    } catch (error) {
+      console.error('Erro na extração:', error);
+      // Em caso de erro, usar dados padrão para demonstração
+      const fallbackData: ProposalData = {
+        clientName: 'NOME NÃO EXTRAÍDO',
+        cpf: '000.000.000-00',
+        rg: '0000000000',
+        agencia: '0000',
+        conta: '00.000',
+        loanValue: '0,00',
+        installmentValue: '0,00',
+        installmentCount: '0',
+        firstInstallmentDate: '00/00/0000',
+        lastInstallmentDate: '00/00/0000',
+        proposalNumber: '000000000',
+        conventionName: 'CONVÊNIO NÃO IDENTIFICADO',
+        conventionCnpj: '00.000.000/0001-00'
+      };
+      onDataExtracted(fallbackData);
+    }
   };
 
   return (
@@ -77,7 +76,7 @@ const DataExtractor: React.FC<DataExtractorProps> = ({
           </div>
 
           <Button
-            onClick={extractDataFromPDF}
+            onClick={handleExtractData}
             disabled={isProcessing}
             className="w-full bg-finance-600 hover:bg-finance-700"
           >
