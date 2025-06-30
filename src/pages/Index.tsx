@@ -47,29 +47,25 @@ const Index = () => {
       id: 'upload', 
       title: 'Upload', 
       description: 'Enviar proposta PDF',
-      icon: Upload,
-      color: 'from-blue-500 to-blue-600'
+      icon: Upload
     },
     { 
       id: 'extract', 
       title: 'Extração', 
       description: 'Extrair dados',
-      icon: Search,
-      color: 'from-green-500 to-green-600'
+      icon: Search
     },
     { 
       id: 'edit', 
       title: 'Validação', 
       description: 'Validar informações',
-      icon: Edit,
-      color: 'from-purple-500 to-purple-600'
+      icon: Edit
     },
     { 
       id: 'generate', 
       title: 'Geração', 
       description: 'Gerar carta',
-      icon: FileDown,
-      color: 'from-orange-500 to-orange-600'
+      icon: FileDown
     }
   ];
 
@@ -98,41 +94,36 @@ const Index = () => {
       </div>
 
       <div className="container mx-auto px-4 py-8">
-        {/* Services Grid */}
-        <div className="max-w-6xl mx-auto mb-12">
-          <div className="text-center mb-8">
-            <h2 className="text-2xl font-bold text-gray-900 mb-4">Conheça nossos serviços</h2>
-          </div>
-          
-          <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-6">
+        {/* Process Steps - Original Style */}
+        <div className="max-w-4xl mx-auto mb-8">
+          <div className="flex items-center justify-between">
             {steps.map((step, index) => {
               const Icon = step.icon;
-              const isActive = index <= currentStepIndex;
+              const isActive = index === currentStepIndex;
               const isCompleted = index < currentStepIndex;
               
               return (
-                <div
-                  key={step.id}
-                  className={`bg-white rounded-xl p-6 shadow-lg transition-all duration-300 hover:shadow-xl transform hover:-translate-y-1 ${
-                    isActive ? 'ring-2 ring-blue-500 ring-opacity-50' : ''
-                  }`}
-                >
-                  <div className="text-center">
-                    <div className={`w-16 h-16 mx-auto mb-4 rounded-full bg-gradient-to-r ${step.color} flex items-center justify-center shadow-lg`}>
+                <div key={step.id} className="flex items-center">
+                  <div className={`flex flex-col items-center ${isActive ? 'text-blue-600' : isCompleted ? 'text-green-600' : 'text-gray-400'}`}>
+                    <div className={`w-12 h-12 rounded-full flex items-center justify-center border-2 ${
+                      isCompleted ? 'bg-green-100 border-green-500' : 
+                      isActive ? 'bg-blue-100 border-blue-500' : 
+                      'bg-gray-100 border-gray-300'
+                    }`}>
                       {isCompleted ? (
-                        <CheckCircle2 className="h-8 w-8 text-white" />
+                        <CheckCircle2 className="w-6 h-6" />
                       ) : (
-                        <Icon className="h-8 w-8 text-white" />
+                        <Icon className="w-6 h-6" />
                       )}
                     </div>
-                    <h3 className="text-xl font-semibold text-gray-900 mb-2">{step.title}</h3>
-                    <p className="text-gray-600 text-sm">{step.description}</p>
-                    {isActive && !isCompleted && (
-                      <div className="mt-3 w-full bg-gray-200 rounded-full h-2">
-                        <div className="bg-gradient-to-r from-blue-500 to-indigo-500 h-2 rounded-full animate-pulse" style={{ width: '60%' }}></div>
-                      </div>
-                    )}
+                    <span className="text-sm font-medium mt-2">{step.title}</span>
+                    <span className="text-xs text-gray-500 text-center">{step.description}</span>
                   </div>
+                  {index < steps.length - 1 && (
+                    <ArrowRight className={`w-6 h-6 mx-4 ${
+                      index < currentStepIndex ? 'text-green-500' : 'text-gray-400'
+                    }`} />
+                  )}
                 </div>
               );
             })}
