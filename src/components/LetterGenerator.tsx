@@ -5,7 +5,6 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { ProposalData, LETTER_TEMPLATES, LetterTemplate } from '@/types';
 import jsPDF from 'jspdf';
-//import 'jspdf-autotable'; // Importar para melhor manuseio de texto
 
 interface LetterGeneratorProps {
   data: ProposalData;
@@ -30,14 +29,13 @@ const LetterGenerator: React.FC<LetterGeneratorProps> = ({ data, onReset }) => {
     if (!selectedTemplate) return;
 
     setIsGenerating(true);
-    await new Promise(resolve => setTimeout(resolve, 500)); // Simula um pequeno carregamento
+    await new Promise(resolve => setTimeout(resolve, 500)); 
 
     const today = new Date();
     const formattedDate = today.toLocaleDateString('pt-BR', {
       day: '2-digit', month: 'long', year: 'numeric'
     });
-
-    // Conteúdo para a pré-visualização <pre>. A formatação final será aplicada no PDF.
+    
     const letterContent = `
 São Mateus do Maranhão, ${formattedDate}
 
@@ -73,8 +71,8 @@ Atenciosamente,
 
 
 ___________________________________________________________________
+${selectedTemplate.name}
 ${selectedTemplate.signatory}
-${selectedTemplate.signatoryRole}
 CPF: ${selectedTemplate.signatoryCpf}
     `;
 
@@ -91,7 +89,6 @@ CPF: ${selectedTemplate.signatoryCpf}
     const maxWidth = pageWidth - margin * 2;
     let y = 20;
 
-    // --- Configurações de Fonte ---
     doc.setFont('helvetica');
     doc.setFontSize(12);
 
@@ -100,11 +97,9 @@ CPF: ${selectedTemplate.signatoryCpf}
         day: '2-digit', month: 'long', year: 'numeric'
     });
 
-    // --- 1. Cabeçalho (Data e Local) - Alinhado à direita ---
     doc.text(`São Mateus do Maranhão, ${formattedDate}`, pageWidth - margin, y, { align: 'right' });
     y += 15;
 
-    // --- 2. Destinatário - Alinhado à esquerda ---
     doc.text('Ao', margin, y);
     y += 5;
     doc.text('Banco do Brasil S.A', margin, y);
@@ -112,13 +107,11 @@ CPF: ${selectedTemplate.signatoryCpf}
     doc.text(`Agência ${data.agencia} de São Mateus do Maranhão MA`, margin, y);
     y += 15;
 
-    // --- 3. Assunto ---
     const subject = 'Referente a Empréstimo de Consignação em Folha Pagamento - Confirmação de Reserva de Margem Consignável.';
     const subjectLines = doc.splitTextToSize(subject, maxWidth);
     doc.text(subjectLines, margin, y);
     y += (subjectLines.length * 5) + 10;
 
-    // --- 4. Seções com Títulos em Negrito ---
     const addSection = (title: string, content: string[]) => {
       doc.setFont('helvetica', 'bold');
       doc.text(title, margin, y);
@@ -128,7 +121,7 @@ CPF: ${selectedTemplate.signatoryCpf}
         doc.text(line, margin, y);
         y += 5;
       });
-      y += 5; // Espaço extra após a seção
+      y += 5;
     };
 
     addSection('DADOS DO EMPREGADO:', [
@@ -149,7 +142,6 @@ CPF: ${selectedTemplate.signatoryCpf}
       `Data da Última Prestação: ${data.lastInstallmentDate}`,
     ]);
 
-    // --- 5. Corpo do Texto (Justificado) ---
     const bodyText1 = `Informo-lhe que recebemos de nosso empregado em referência, comunicado sobre Operação de Crédito Número ${data.proposalNumber}, conforme dados acima com pagamento mediante consignação em folha de Pagamento com esse Banco, autorizado os devidos descontos das prestações mensais em Folha de Pagamento e o posterior repasse a esta Instituição Financeira.`;
     const bodyText2 = 'Dessa forma, ao tempo em que confirmamos a existência de margem consignável suficiente para amparar os valores que serão consignados, informamos que a autorização de nosso Empregado estará sendo integralmente atendida.';
     const bodyText3 = 'Assumimos desde já, o compromisso de consignar e repassar a esse Banco na forma da legislação em vigor, os valores mensais, inclusive aqueles eventualmente decorrentes de verbas rescisórias, no caso de desligamento do empregado do quadro da nossa empresa.';
@@ -157,29 +149,34 @@ CPF: ${selectedTemplate.signatoryCpf}
     const addJustifiedText = (text: string) => {
         const lines = doc.splitTextToSize(text, maxWidth);
         doc.text(lines, margin, y, { align: 'left' });
-        y += (lines.length * 5) + 5; // Espaço após o parágrafo
+        y += (lines.length * 5) + 5;
     };
     
     addJustifiedText(bodyText1);
     addJustifiedText(bodyText2);
     addJustifiedText(bodyText3);
     
-    // --- 6. Rodapé e Assinaturas ---
+    // --- 6. Rodapé e Assinaturas (COM A ORDEM ALTERADA) ---
     y += 10;
     doc.text('Atenciosamente,', margin, y);
     y += 25; // Grande espaço para assinatura
 
     // Linha e texto da assinatura centralizados
     const centerX = pageWidth / 2;
-    doc.line(centerX - 40, y, centerX + 40, y); // Linha de 80mm no centro
+    doc.line(centerX - 40, y, centerX + 40, y);
     y += 6;
+    
+    // NOME DO CONVÊNIO (INSTITUIÇÃO)
+    doc.text(selectedTemplate.name, centerX, y, { align: 'center' });
+    y += 5;
+
+    // NOME DO SIGNATÁRIO
     doc.text(selectedTemplate.signatory, centerX, y, { align: 'center' });
     y += 5;
-    doc.text(selectedTemplate.signatoryRole, centerX, y, { align: 'center' });
-    y += 5;
+    
+    // CPF DO SIGNATÁRIO
     doc.text(`CPF: ${selectedTemplate.signatoryCpf}`, centerX, y, { align: 'center' });
 
-    // --- Salvar o PDF ---
     doc.save(`carta-reserva-margem-${data.proposalNumber}.pdf`);
   };
 
