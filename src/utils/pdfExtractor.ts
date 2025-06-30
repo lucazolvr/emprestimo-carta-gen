@@ -74,59 +74,83 @@ async function extractTextLinesFromPDF(file: File): Promise<string[]> {
 
 // Nova função de parsing que trabalha com um array de linhas
 export function parseExtractedLines(lines: string[]): ProposalData {
-  const patterns = {
-      // As Regex que você já tinha, com a correção do /g
-      clientName: /(?:Nome)[:\s]*(.+)/i, // Simplificado
-      cpf: /(?:CPF)[:\s]*(\d{3}\.?\d{3}\.?\d{3}[-\.]?\d{2})/i,
-      rg: /(?:RG)\s+([\d-]+)/i,
-      agencia: /(?:Agência)\s+(\d+)/i,
-      conta: /(?:Conta)\s+([\d.-]+)/i,
-      proposalNumber: /(?:Número da proposta:)\s*(\d+)/i,
-      loanValue: /(?:Valor solicitado)\s+([0-9.,]+)/i,
-      installmentValue: /(?:Valor Parcela)\s+([0-9.,]+)/i,
-      installmentCount: /(?:Prazo em Meses:)\s*(\d+)/i,
-      firstInstallmentDate: /(?:Data do Débito da Primeira Parcela:)\s*(\d{2}\.\d{2}\.\d{4})/i,
-      lastInstallmentDate: /(?:Data do Débito Da Última Parcela:)\s*(\d{2}\.\d{2}\.\d{4})/i,
-      conventionName: /(?:Nome do convênio)\s+(.+)/i,
-      conventionCnpj: /(?:CNPJ do Convênio)[:\s]*(\d{2}\.?\d{3}\.?\d{3}\/?\d{4}[-\.]?\d{2})/i,
-  };
+    const data: Partial<ProposalData> = {};
 
-  // Objeto para armazenar os dados encontrados
-  const data: Partial<ProposalData> = {};
+    // Itera pelas linhas com um índice para poder olhar a linha seguinte
+    for (let i = 0; i < lines.length; i++) {
+        const line = lines[i];
 
-  for (const line of lines) {
-    // Tenta encontrar cada dado em cada linha. Se já encontrou, pula.
-    if (!data.clientName) data.clientName = line.match(patterns.clientName)?.[1].trim();
-    if (!data.cpf) data.cpf = line.match(patterns.cpf)?.[1].trim();
-    if (!data.rg) data.rg = line.match(patterns.rg)?.[1].trim();
-    if (!data.agencia) data.agencia = line.match(patterns.agencia)?.[1].trim();
-    if (!data.conta) data.conta = line.match(patterns.conta)?.[1].trim();
-    if (!data.proposalNumber) data.proposalNumber = line.match(patterns.proposalNumber)?.[1].trim();
-    if (!data.loanValue) data.loanValue = line.match(patterns.loanValue)?.[1].trim();
-    if (!data.installmentValue) data.installmentValue = line.match(patterns.installmentValue)?.[1].trim();
-    if (!data.installmentCount) data.installmentCount = line.match(patterns.installmentCount)?.[1].trim();
-    if (!data.firstInstallmentDate) data.firstInstallmentDate = line.match(patterns.firstInstallmentDate)?.[1].trim();
-    if (!data.lastInstallmentDate) data.lastInstallmentDate = line.match(patterns.lastInstallmentDate)?.[1].trim();
-    if (!data.conventionName) data.conventionName = line.match(patterns.conventionName)?.[1].trim();
-    if (!data.conventionCnpj) data.conventionCnpj = line.match(patterns.conventionCnpj)?.[1].trim();
-  }
+        // --- Lógica para dados em linhas separadas ---
 
-  // Retorna os dados encontrados com valores padrão para o que faltou
-  return {
-    clientName: data.clientName || 'NOME NÃO ENCONTRADO',
-    cpf: data.cpf || '000.000.000-00',
-    rg: data.rg || '0000000000',
-    agencia: data.agencia || '0000',
-    conta: data.conta || '00.000',
-    loanValue: data.loanValue || '0,00',
-    installmentValue: data.installmentValue || '0,00',
-    installmentCount: data.installmentCount || '0',
-    firstInstallmentDate: data.firstInstallmentDate || '00/00/0000',
-    lastInstallmentDate: data.lastInstallmentDate || '00/00/0000',
-    proposalNumber: data.proposalNumber || '000000000',
-    conventionName: data.conventionName || 'CONVÊNIO NÃO IDENTIFICADO',
-    conventionCnpj: data.conventionCnpj || '00.000.000/0001-00',
-  };
+        // Procura por "CPF" e "Nome" na mesma linha
+        if (line.includes('CPF') && line.includes('Nome')) {
+            const valuesLine = lines[i + 1]; // Pega a linha seguinte
+            if (valuesLine) {
+                // Extrai CPF com regex para garantir o formato
+                const cpfMatch = valuesLine.match(/\d{3}\.\d{3}\.\d{3}\.\d{2}/);
+                if (cpfMatch) {
+                    data.cpf = cpfMatch[0];
+                    // O nome é o resto da string, sem o CPF
+                    data.clientName = valuesLine.replace(cpfMatch[0], '').trim();
+                }
+            }
+        }
+        
+        // Procura por "Documento de Identificação", "Agência" e "Conta"
+        if (line.includes('Documento de Identificação') && line.includes('Agência')) {
+            const valuesLine = lines[i + 1]; // Pega a linha seguinte
+            if (valuesLine) {
+                 // Divide a linha de valores por 2 ou mais espaços
+                const parts = valuesLine.trim().split(/\s{2,}/);
+                if (parts.length >= 3) {
+                    // Extrai o RG, que é a primeira parte
+                    data.rg = parts[0].replace('RG', '').trim();
+                    // A agência é a segunda parte
+                    data.agencia = parts[1];
+                    // A conta é a terceira parte
+                    data.conta = parts[2];
+                }
+            }
+        }
+
+        // --- Lógica para dados na mesma linha (como no seu código original) ---
+        
+        const patterns = {
+            proposalNumber: /Número da proposta:\s*(\d+)/i,
+            loanValue: /Valor solicitado\s+([0-9.,]+)/i,
+            installmentValue: /Valor Parcela\s+([0-9.,]+)/i,
+            installmentCount: /Prazo em Meses:\s*(\d+)/i,
+            firstInstallmentDate: /Data do Débito da Primeira Parcela:\s*(\d{2}\.\d{2}\.\d{4})/i,
+            lastInstallmentDate: /Data do Débito Da Última Parcela:\s*(\d{2}\.\d{2}\.\d{4})/i,
+            conventionName: /Nome do convênio\s+([\w\s-]+?)\s{2,}/i,
+        };
+
+        // Aplica os padrões se o dado ainda não foi encontrado
+        if (!data.proposalNumber) data.proposalNumber = line.match(patterns.proposalNumber)?.[1].trim();
+        if (!data.loanValue) data.loanValue = line.match(patterns.loanValue)?.[1].trim();
+        if (!data.installmentValue) data.installmentValue = line.match(patterns.installmentValue)?.[1].trim();
+        if (!data.installmentCount) data.installmentCount = line.match(patterns.installmentCount)?.[1].trim();
+        if (!data.firstInstallmentDate) data.firstInstallmentDate = line.match(patterns.firstInstallmentDate)?.[1].trim();
+        if (!data.lastInstallmentDate) data.lastInstallmentDate = line.match(patterns.lastInstallmentDate)?.[1].trim();
+        if (!data.conventionName) data.conventionName = line.match(patterns.conventionName)?.[1].trim();
+    }
+
+    // Retorna os dados encontrados com valores padrão para o que faltou
+    return {
+        clientName: data.clientName || 'NOME NÃO ENCONTRADO',
+        cpf: data.cpf || '000.000.000-00',
+        rg: data.rg || '0000000000',
+        agencia: data.agencia || '0000',
+        conta: data.conta || '00.000',
+        loanValue: data.loanValue || '0,00',
+        installmentValue: data.installmentValue || '0,00',
+        installmentCount: data.installmentCount || '0',
+        firstInstallmentDate: data.firstInstallmentDate || '00/00/0000',
+        lastInstallmentDate: data.lastInstallmentDate || '00/00/0000',
+        proposalNumber: data.proposalNumber || '000000000',
+        conventionName: data.conventionName || 'CONVÊNIO NÃO IDENTIFICADO',
+        conventionCnpj: data.conventionCnpj || '00.000.000/0001-00', // Nota: Lógica para CNPJ do convênio não foi adicionada, pois não está claro no log.
+    };
 }
 
 function extractWithPatterns(text: string, patterns: RegExp[]): string | null {

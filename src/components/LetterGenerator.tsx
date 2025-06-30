@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { Download, FileText, Check } from 'lucide-react';
 import { Button } from '@/components/ui/button';
@@ -6,6 +5,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { ProposalData, LETTER_TEMPLATES, LetterTemplate } from '@/types';
 import jsPDF from 'jspdf';
+//import 'jspdf-autotable'; // Importar para melhor manuseio de texto
 
 interface LetterGeneratorProps {
   data: ProposalData;
@@ -17,7 +17,7 @@ const LetterGenerator: React.FC<LetterGeneratorProps> = ({ data, onReset }) => {
   const [isGenerating, setIsGenerating] = useState(false);
   const [generatedLetter, setGeneratedLetter] = useState<string | null>(null);
 
-  // Auto-select template based on CNPJ
+  // Auto-seleciona o template baseado no CNPJ do convênio
   React.useEffect(() => {
     const template = LETTER_TEMPLATES.find(t => t.cnpj === data.conventionCnpj);
     if (template) {
@@ -25,21 +25,19 @@ const LetterGenerator: React.FC<LetterGeneratorProps> = ({ data, onReset }) => {
     }
   }, [data.conventionCnpj]);
 
-  const generateLetter = async () => {
+  // Gera o conteúdo para a PRÉ-VISUALIZAÇÃO em texto simples
+  const generateLetterPreview = async () => {
     if (!selectedTemplate) return;
 
     setIsGenerating(true);
-    
-    // Simula geração da carta
-    await new Promise(resolve => setTimeout(resolve, 1500));
+    await new Promise(resolve => setTimeout(resolve, 500)); // Simula um pequeno carregamento
 
     const today = new Date();
     const formattedDate = today.toLocaleDateString('pt-BR', {
-      day: '2-digit',
-      month: 'long',
-      year: 'numeric'
+      day: '2-digit', month: 'long', year: 'numeric'
     });
 
+    // Conteúdo para a pré-visualização <pre>. A formatação final será aplicada no PDF.
     const letterContent = `
 São Mateus do Maranhão, ${formattedDate}
 
@@ -47,49 +45,36 @@ Ao
 Banco do Brasil S.A
 Agência ${data.agencia} de São Mateus do Maranhão MA
 
-Referente a Empréstimo de Consignação em Folha Pagamento - Confirmação de 
-Reserva de Margem Consignável.
+Referente a Empréstimo de Consignação em Folha Pagamento - Confirmação de Reserva de Margem Consignável.
 
 DADOS DO EMPREGADO:
-
 NOME: ${data.clientName}
 CPF: ${data.cpf}   Ag: ${data.agencia}   C/C: ${data.conta}
-RG: ${data.rg}
+RG: ${data.rg || ''}
 
 DADOS DO EMPREGADOR:
-
 NOME: ${selectedTemplate.name}
 CNPJ: ${selectedTemplate.cnpj}
 
 DADOS DO EMPRÉSTIMO:
-
 Valor do Empréstimo R$: ${data.loanValue}  Número de Prestações: ${data.installmentCount}
 Valor das Prestações R$: ${data.installmentValue}
 Data da Primeira Prestação: ${data.firstInstallmentDate}
 Data da Última Prestação: ${data.lastInstallmentDate}
 
-Informo-lhe que recebemos de nosso empregado em referência, comunicado sobre
-Operação de Crédito Número ${data.proposalNumber}, conforme dados acima com pagamento
-mediante consignação em folha de Pagamento com esse Banco, autorizado os
-devidos descontos das prestações mensais em Folha de Pagamento e o posterior
-repasse a esta Instituição Financeira.
+Informo-lhe que recebemos de nosso empregado em referência, comunicado sobre Operação de Crédito Número ${data.proposalNumber}, conforme dados acima com pagamento mediante consignação em folha de Pagamento com esse Banco, autorizado os devidos descontos das prestações mensais em Folha de Pagamento e o posterior repasse a esta Instituição Financeira.
 
-Dessa forma, ao tempo em que confirmamos a existência de margem consignável
-suficiente para amparar os valores que serão consignados, informamos que a
-autorização de nosso Empregado estará sendo integralmente atendida.
+Dessa forma, ao tempo em que confirmamos a existência de margem consignável suficiente para amparar os valores que serão consignados, informamos que a autorização de nosso Empregado estará sendo integralmente atendida.
 
-Assumimos desde já, o compromisso de consignar e repassar a esse Banco na forma
-da legislação em vigor, os valores mensais, inclusive aqueles eventualmente
-decorrentes de verbas rescisórias, no caso de desligamento do empregado do quadro
-da nossa empresa.
+Assumimos desde já, o compromisso de consignar e repassar a esse Banco na forma da legislação em vigor, os valores mensais, inclusive aqueles eventualmente decorrentes de verbas rescisórias, no caso de desligamento do empregado do quadro da nossa empresa.
 
 Atenciosamente,
 
+
+
 ___________________________________________________________________
-
-${selectedTemplate.signatoryRole}
 ${selectedTemplate.signatory}
-
+${selectedTemplate.signatoryRole}
 CPF: ${selectedTemplate.signatoryCpf}
     `;
 
@@ -98,44 +83,104 @@ CPF: ${selectedTemplate.signatoryCpf}
   };
 
   const downloadPDF = () => {
-    if (!generatedLetter || !selectedTemplate) return;
-
-    console.log('Gerando PDF da carta...');
+    if (!selectedTemplate) return;
 
     const doc = new jsPDF('p', 'mm', 'a4');
-    
-    // Configurar fonte
-    doc.setFont('helvetica', 'normal');
+    const pageWidth = doc.internal.pageSize.getWidth();
+    const margin = 20;
+    const maxWidth = pageWidth - margin * 2;
+    let y = 20;
+
+    // --- Configurações de Fonte ---
+    doc.setFont('helvetica');
     doc.setFontSize(12);
-    
-    // Dividir o texto em linhas
-    const lines = generatedLetter.split('\n');
-    let y = 20; // Posição Y inicial
-    const lineHeight = 5;
-    const maxWidth = 180; // Largura máxima do texto
-    
-    lines.forEach(line => {
-      if (line.trim() === '') {
-        y += lineHeight / 2; // Espaço menor para linhas vazias
-        return;
-      }
-      
-      // Quebrar linha se for muito longa
-      const splitLines = doc.splitTextToSize(line, maxWidth);
-      
-      splitLines.forEach((splitLine: string) => {
-        if (y > 280) { // Se próximo do fim da página
-          doc.addPage();
-          y = 20;
-        }
-        doc.text(splitLine, 15, y);
-        y += lineHeight;
-      });
+
+    const today = new Date();
+    const formattedDate = today.toLocaleDateString('pt-BR', {
+        day: '2-digit', month: 'long', year: 'numeric'
     });
+
+    // --- 1. Cabeçalho (Data e Local) - Alinhado à direita ---
+    doc.text(`São Mateus do Maranhão, ${formattedDate}`, pageWidth - margin, y, { align: 'right' });
+    y += 15;
+
+    // --- 2. Destinatário - Alinhado à esquerda ---
+    doc.text('Ao', margin, y);
+    y += 5;
+    doc.text('Banco do Brasil S.A', margin, y);
+    y += 5;
+    doc.text(`Agência ${data.agencia} de São Mateus do Maranhão MA`, margin, y);
+    y += 15;
+
+    // --- 3. Assunto ---
+    const subject = 'Referente a Empréstimo de Consignação em Folha Pagamento - Confirmação de Reserva de Margem Consignável.';
+    const subjectLines = doc.splitTextToSize(subject, maxWidth);
+    doc.text(subjectLines, margin, y);
+    y += (subjectLines.length * 5) + 10;
+
+    // --- 4. Seções com Títulos em Negrito ---
+    const addSection = (title: string, content: string[]) => {
+      doc.setFont('helvetica', 'bold');
+      doc.text(title, margin, y);
+      y += 6;
+      doc.setFont('helvetica', 'normal');
+      content.forEach(line => {
+        doc.text(line, margin, y);
+        y += 5;
+      });
+      y += 5; // Espaço extra após a seção
+    };
+
+    addSection('DADOS DO EMPREGADO:', [
+      `NOME: ${data.clientName}`,
+      `CPF: ${data.cpf}   Ag: ${data.agencia}   C/C: ${data.conta}`,
+      `RG: ${data.rg || 'Não informado'}`,
+    ]);
+
+    addSection('DADOS DO EMPREGADOR:', [
+      `NOME: ${selectedTemplate.name}`,
+      `CNPJ: ${selectedTemplate.cnpj}`,
+    ]);
+
+    addSection('DADOS DO EMPRÉSTIMO:', [
+      `Valor do Empréstimo R$: ${data.loanValue}  Número de Prestações: ${data.installmentCount}`,
+      `Valor das Prestações R$: ${data.installmentValue}`,
+      `Data da Primeira Prestação: ${data.firstInstallmentDate}`,
+      `Data da Última Prestação: ${data.lastInstallmentDate}`,
+    ]);
+
+    // --- 5. Corpo do Texto (Justificado) ---
+    const bodyText1 = `Informo-lhe que recebemos de nosso empregado em referência, comunicado sobre Operação de Crédito Número ${data.proposalNumber}, conforme dados acima com pagamento mediante consignação em folha de Pagamento com esse Banco, autorizado os devidos descontos das prestações mensais em Folha de Pagamento e o posterior repasse a esta Instituição Financeira.`;
+    const bodyText2 = 'Dessa forma, ao tempo em que confirmamos a existência de margem consignável suficiente para amparar os valores que serão consignados, informamos que a autorização de nosso Empregado estará sendo integralmente atendida.';
+    const bodyText3 = 'Assumimos desde já, o compromisso de consignar e repassar a esse Banco na forma da legislação em vigor, os valores mensais, inclusive aqueles eventualmente decorrentes de verbas rescisórias, no caso de desligamento do empregado do quadro da nossa empresa.';
+
+    const addJustifiedText = (text: string) => {
+        const lines = doc.splitTextToSize(text, maxWidth);
+        doc.text(lines, margin, y, { align: 'left' });
+        y += (lines.length * 5) + 5; // Espaço após o parágrafo
+    };
     
-    // Salvar o PDF
-    const fileName = `carta-reserva-margem-${data.proposalNumber}.pdf`;
-    doc.save(fileName);
+    addJustifiedText(bodyText1);
+    addJustifiedText(bodyText2);
+    addJustifiedText(bodyText3);
+    
+    // --- 6. Rodapé e Assinaturas ---
+    y += 10;
+    doc.text('Atenciosamente,', margin, y);
+    y += 25; // Grande espaço para assinatura
+
+    // Linha e texto da assinatura centralizados
+    const centerX = pageWidth / 2;
+    doc.line(centerX - 40, y, centerX + 40, y); // Linha de 80mm no centro
+    y += 6;
+    doc.text(selectedTemplate.signatory, centerX, y, { align: 'center' });
+    y += 5;
+    doc.text(selectedTemplate.signatoryRole, centerX, y, { align: 'center' });
+    y += 5;
+    doc.text(`CPF: ${selectedTemplate.signatoryCpf}`, centerX, y, { align: 'center' });
+
+    // --- Salvar o PDF ---
+    doc.save(`carta-reserva-margem-${data.proposalNumber}.pdf`);
   };
 
   return (
@@ -186,7 +231,7 @@ CPF: ${selectedTemplate.signatoryCpf}
 
           <div className="flex space-x-4">
             <Button
-              onClick={generateLetter}
+              onClick={generateLetterPreview}
               disabled={!selectedTemplate || isGenerating}
               className="flex-1 bg-finance-600 hover:bg-finance-700"
             >
@@ -196,7 +241,7 @@ CPF: ${selectedTemplate.signatoryCpf}
                   <span>Gerando...</span>
                 </div>
               ) : (
-                'Gerar Carta'
+                'Gerar Prévia'
               )}
             </Button>
 
@@ -207,14 +252,14 @@ CPF: ${selectedTemplate.signatoryCpf}
                 className="flex items-center space-x-2"
               >
                 <Download className="h-4 w-4" />
-                <span>Download PDF</span>
+                <span>Download PDF Formatado</span>
               </Button>
             )}
           </div>
 
           {generatedLetter && (
             <div className="mt-6">
-              <h3 className="font-medium text-gray-900 mb-3">Prévia da Carta:</h3>
+              <h3 className="font-medium text-gray-900 mb-3">Prévia da Carta (texto simples):</h3>
               <div className="bg-gray-50 p-4 rounded-lg border max-h-96 overflow-y-auto">
                 <pre className="text-sm text-gray-700 whitespace-pre-wrap font-mono">
                   {generatedLetter}
