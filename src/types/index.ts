@@ -40,5 +40,13 @@ export const LETTER_TEMPLATES: LetterTemplate[] = [
     signatory: 'IARA AMARAL LIMA LOPES',
     signatoryRole: 'INSTITUTO MUNICIPAL DE PREVIDÊNCIA E ASSIST IPAM',
     signatoryCpf: '048.597.213-14'
+  },
+  {
+    id: 'prefeiturasaude',
+    name: 'FUNDO MUNICIPAL DE SAÚDE - MUNICÍPIO DE SÃO MATEUS',
+    cnpj: '13.829.344/0001-50',
+    signatory: 'LUCÉLIA MARTINS',
+    signatoryRole: 'FUNDO MUNICIPAL DE SAÚDE DE SÃO MATEUS MA',
+    signatoryCpf: '803.371.763-04'
   }
 ];
