@@ -4,185 +4,129 @@ import * as pdfjsLib from 'pdfjs-dist';
 
 // Configurar o worker do PDF.js de forma mais robusta
 const PDFJS_VERSION = '4.0.379';
-pdfjsLib.GlobalWorkerOptions.workerSrc = `https://cdnjs.cloudflare.com/ajax/libs/pdf.js/${PDFJS_VERSION}/pdf.worker.min.js`;
+pdfjsLib.GlobalWorkerOptions.workerSrc = `/pdf.worker.min.js`;
 
+// Função principal atualizada
 export async function extractDataFromPDF(file: File): Promise<ProposalData> {
-  console.log('Iniciando extração REAL do PDF:', file.name);
-
   try {
-    // Extrair texto real do PDF
-    const text = await extractTextFromPDF(file);
-    console.log('Texto completo extraído:', text);
+    // 1. Usa a nova função para extrair LINHAS de texto
+    const lines = await extractTextLinesFromPDF(file);
     
-    if (!text || text.trim().length < 20) {
-      throw new Error('Não foi possível extrair texto suficiente do PDF');
+    if (!lines || lines.length === 0) {
+      throw new Error('Não foi possível extrair texto do PDF');
     }
 
-    // Parse dos dados extraídos
-    const extractedData = parseExtractedText(text);
-    console.log('Dados finais extraídos:', extractedData);
+    // 2. Usa a nova função para parsear as LINHAS
+    const extractedData = parseExtractedLines(lines);
     
+    console.log('Dados finais extraídos:', extractedData);
     return extractedData;
     
   } catch (error) {
-    console.error('ERRO na extração real:', error);
+    console.error('ERRO na extração:', error);
+    // Lança o erro para que o componente React possa tratá-lo
     throw new Error(`Falha na extração do PDF: ${error instanceof Error ? error.message : 'Erro desconhecido'}`);
   }
 }
 
-async function extractTextFromPDF(file: File): Promise<string> {
-  console.log('Iniciando extração de texto do PDF...');
-  
+// Nova função para extrair texto linha por linha
+async function extractTextLinesFromPDF(file: File): Promise<string[]> {
   const arrayBuffer = await file.arrayBuffer();
-  
-  // Configurar PDF.js com opções mais robustas
-  const loadingTask = pdfjsLib.getDocument({
-    data: arrayBuffer,
-    useSystemFonts: true,
-    disableFontFace: false,
-    verbosity: 0
-  });
-
+  const loadingTask = pdfjsLib.getDocument({ data: arrayBuffer });
   const pdf = await loadingTask.promise;
-  console.log(`PDF carregado com ${pdf.numPages} páginas`);
-  
-  let fullText = '';
-  
-  // Extrair texto de todas as páginas
+  const allLines: string[] = [];
+
   for (let pageNum = 1; pageNum <= pdf.numPages; pageNum++) {
-    console.log(`Processando página ${pageNum}...`);
-    
     const page = await pdf.getPage(pageNum);
     const textContent = await page.getTextContent();
-    
-    // Montar o texto da página preservando a estrutura
-    let pageText = '';
-    let lastY = null;
-    
-    for (const item of textContent.items) {
-      const textItem = item as any;
-      
-      // Adicionar quebra de linha se mudou de linha significativamente
-      if (lastY !== null && Math.abs(lastY - textItem.transform[5]) > 5) {
-        pageText += '\n';
+    const items = textContent.items as any[];
+
+    if (items.length === 0) continue;
+
+    // Agrupa itens de texto por linha (coordenada Y)
+    const linesMap = new Map<number, any[]>();
+    for (const item of items) {
+      // Usa a posição Y (transform[5]) arredondada como chave
+      const y = Math.round(item.transform[5]);
+      if (!linesMap.has(y)) {
+        linesMap.set(y, []);
       }
-      
-      pageText += textItem.str + ' ';
-      lastY = textItem.transform[5];
+      linesMap.get(y)!.push(item);
     }
-    
-    fullText += pageText + '\n\n';
+
+    // Ordena as linhas pela posição Y (de cima para baixo)
+    const sortedY = Array.from(linesMap.keys()).sort((a, b) => b - a);
+
+    // Para cada linha, ordena os itens por X (da esquerda para a direita) e junta o texto
+    for (const y of sortedY) {
+      const lineItems = linesMap.get(y)!;
+      lineItems.sort((a, b) => a.transform[4] - b.transform[4]);
+      const lineText = lineItems.map(item => item.str).join(' ');
+      allLines.push(lineText);
+    }
+    allLines.push('\n--- PAGE BREAK ---\n'); // Adiciona um separador de página
   }
   
-  console.log('Texto extraído com sucesso. Tamanho:', fullText.length, 'caracteres');
-  return fullText;
+  console.log("--- LINHAS EXTRAÍDAS DO PDF ---");
+  console.log(allLines);
+  return allLines;
 }
 
-export function parseExtractedText(text: string): ProposalData {
-  console.log('Iniciando parsing do texto extraído...');
-  
-  // Patterns mais robustos para diferentes formatos
+// Nova função de parsing que trabalha com um array de linhas
+export function parseExtractedLines(lines: string[]): ProposalData {
   const patterns = {
-    // Nome do cliente - várias variações
-    clientName: [
-      /(?:Nome|NOME)[:\s]*(.+?)(?:\s*(?:CPF|RG|\n|$))/i,
-      /(?:Cliente|CLIENTE)[:\s]*(.+?)(?:\s*(?:CPF|RG|\n|$))/i,
-      /(?:Beneficiário|BENEFICIÁRIO)[:\s]*(.+?)(?:\s*(?:CPF|RG|\n|$))/i
-    ],
-    
-    // CPF
-    cpf: [
-      /(?:CPF|C\.P\.F\.?)[:\s]*(\d{3}\.?\d{3}\.?\d{3}[-\.]?\d{2})/i,
-      /(\d{3}\.?\d{3}\.?\d{3}[-\.]?\d{2})/g
-    ],
-    
-    // RG
-    rg: [
-      /(?:RG|R\.G\.?)[:\s]*(\d+)/i,
-      /(?:Identidade|IDENTIDADE)[:\s]*(\d+)/i
-    ],
-    
-    // Agência
-    agencia: [
-      /(?:Agência|AGÊNCIA|Ag\.?)[:\s]*(\d+)/i,
-      /(?:Agency|AGENCY)[:\s]*(\d+)/i
-    ],
-    
-    // Conta
-    conta: [
-      /(?:Conta|CONTA|C\/C|CC)[:\s]*(\d+[.\-]?\d*)/i,
-      /(?:Account|ACCOUNT)[:\s]*(\d+[.\-]?\d*)/i
-    ],
-    
-    // Número da proposta
-    proposalNumber: [
-      /(?:Número|NÚMERO|Nº|N°)(?:\s*da\s*)?(?:proposta|PROPOSTA)[:\s]*(\d+)/i,
-      /(?:Proposta|PROPOSTA)[:\s]*(?:n°|nº|número)?[:\s]*(\d+)/i,
-      /(?:Protocolo|PROTOCOLO)[:\s]*(\d+)/i
-    ],
-    
-    // Valor do empréstimo
-    loanValue: [
-      /(?:Valor|VALOR)(?:\s*(?:do\s*)?(?:empréstimo|EMPRÉSTIMO|solicitado|SOLICITADO))[:\s]*(?:R\$\s*)?([0-9.,]+)/i,
-      /(?:Empréstimo|EMPRÉSTIMO)[:\s]*(?:R\$\s*)?([0-9.,]+)/i
-    ],
-    
-    // Valor da parcela
-    installmentValue: [
-      /(?:Valor|VALOR)(?:\s*(?:da\s*)?(?:parcela|PARCELA|prestação|PRESTAÇÃO))[:\s]*(?:R\$\s*)?([0-9.,]+)/i,
-      /(?:Parcela|PARCELA)[:\s]*(?:R\$\s*)?([0-9.,]+)/i,
-      /(?:Prestação|PRESTAÇÃO)[:\s]*(?:R\$\s*)?([0-9.,]+)/i
-    ],
-    
-    // Quantidade de parcelas
-    installmentCount: [
-      /(?:Prazo|PRAZO)(?:\s*em\s*meses|\s*meses)?[:\s]*(\d+)/i,
-      /(\d+)(?:\s*(?:parcelas|PARCELAS|prestações|PRESTAÇÕES|meses|MESES))/i,
-      /(?:Parcelas|PARCELAS)[:\s]*(\d+)/i
-    ],
-    
-    // Datas
-    firstInstallmentDate: [
-      /(?:primeira|PRIMEIRA|1ª|1°)(?:\s*(?:parcela|PARCELA|prestação|PRESTAÇÃO))[:\s]*(\d{1,2}\/\d{1,2}\/\d{4})/i,
-      /(?:Data|DATA)(?:\s*(?:da\s*)?(?:primeira|PRIMEIRA))[:\s]*(\d{1,2}\/\d{1,2}\/\d{4})/i
-    ],
-    
-    lastInstallmentDate: [
-      /(?:última|ÚLTIMA|final|FINAL)(?:\s*(?:parcela|PARCELA|prestação|PRESTAÇÃO))[:\s]*(\d{1,2}\/\d{1,2}\/\d{4})/i,
-      /(?:Data|DATA)(?:\s*(?:da\s*)?(?:última|ÚLTIMA))[:\s]*(\d{1,2}\/\d{1,2}\/\d{4})/i
-    ],
-    
-    // Convênio
-    conventionName: [
-      /(?:Convênio|CONVÊNIO|Convenio|CONVENIO)[:\s]*(.+?)(?:\s*(?:CNPJ|\n|$))/i,
-      /(?:Órgão|ÓRGÃO|Orgao|ORGAO)[:\s]*(.+?)(?:\s*(?:CNPJ|\n|$))/i
-    ],
-    
-    conventionCnpj: [
-      /(?:CNPJ|C\.N\.P\.J\.?)[:\s]*(\d{2}\.?\d{3}\.?\d{3}\/?\d{4}[-\.]?\d{2})/i,
-      /(\d{2}\.?\d{3}\.?\d{3}\/?\d{4}[-\.]?\d{2})/g
-    ]
+      // As Regex que você já tinha, com a correção do /g
+      clientName: /(?:Nome)[:\s]*(.+)/i, // Simplificado
+      cpf: /(?:CPF)[:\s]*(\d{3}\.?\d{3}\.?\d{3}[-\.]?\d{2})/i,
+      rg: /(?:RG)\s+([\d-]+)/i,
+      agencia: /(?:Agência)\s+(\d+)/i,
+      conta: /(?:Conta)\s+([\d.-]+)/i,
+      proposalNumber: /(?:Número da proposta:)\s*(\d+)/i,
+      loanValue: /(?:Valor solicitado)\s+([0-9.,]+)/i,
+      installmentValue: /(?:Valor Parcela)\s+([0-9.,]+)/i,
+      installmentCount: /(?:Prazo em Meses:)\s*(\d+)/i,
+      firstInstallmentDate: /(?:Data do Débito da Primeira Parcela:)\s*(\d{2}\.\d{2}\.\d{4})/i,
+      lastInstallmentDate: /(?:Data do Débito Da Última Parcela:)\s*(\d{2}\.\d{2}\.\d{4})/i,
+      conventionName: /(?:Nome do convênio)\s+(.+)/i,
+      conventionCnpj: /(?:CNPJ do Convênio)[:\s]*(\d{2}\.?\d{3}\.?\d{3}\/?\d{4}[-\.]?\d{2})/i,
   };
 
-  // Extrair cada campo usando múltiplos patterns
-  const extractedData: ProposalData = {
-    clientName: extractWithPatterns(text, patterns.clientName) || 'NOME NÃO ENCONTRADO',
-    cpf: extractWithPatterns(text, patterns.cpf) || '000.000.000-00',
-    rg: extractWithPatterns(text, patterns.rg) || '0000000000',
-    agencia: extractWithPatterns(text, patterns.agencia) || '0000',
-    conta: extractWithPatterns(text, patterns.conta) || '00.000',
-    loanValue: cleanCurrency(extractWithPatterns(text, patterns.loanValue)) || '0,00',
-    installmentValue: cleanCurrency(extractWithPatterns(text, patterns.installmentValue)) || '0,00',
-    installmentCount: extractWithPatterns(text, patterns.installmentCount) || '0',
-    firstInstallmentDate: extractWithPatterns(text, patterns.firstInstallmentDate) || '00/00/0000',
-    lastInstallmentDate: extractWithPatterns(text, patterns.lastInstallmentDate) || '00/00/0000',
-    proposalNumber: extractWithPatterns(text, patterns.proposalNumber) || '000000000',
-    conventionName: extractWithPatterns(text, patterns.conventionName)?.trim() || 'CONVÊNIO NÃO IDENTIFICADO',
-    conventionCnpj: extractWithPatterns(text, patterns.conventionCnpj) || '00.000.000/0001-00'
-  };
+  // Objeto para armazenar os dados encontrados
+  const data: Partial<ProposalData> = {};
 
-  console.log('Dados extraídos do parsing:', extractedData);
-  return extractedData;
+  for (const line of lines) {
+    // Tenta encontrar cada dado em cada linha. Se já encontrou, pula.
+    if (!data.clientName) data.clientName = line.match(patterns.clientName)?.[1].trim();
+    if (!data.cpf) data.cpf = line.match(patterns.cpf)?.[1].trim();
+    if (!data.rg) data.rg = line.match(patterns.rg)?.[1].trim();
+    if (!data.agencia) data.agencia = line.match(patterns.agencia)?.[1].trim();
+    if (!data.conta) data.conta = line.match(patterns.conta)?.[1].trim();
+    if (!data.proposalNumber) data.proposalNumber = line.match(patterns.proposalNumber)?.[1].trim();
+    if (!data.loanValue) data.loanValue = line.match(patterns.loanValue)?.[1].trim();
+    if (!data.installmentValue) data.installmentValue = line.match(patterns.installmentValue)?.[1].trim();
+    if (!data.installmentCount) data.installmentCount = line.match(patterns.installmentCount)?.[1].trim();
+    if (!data.firstInstallmentDate) data.firstInstallmentDate = line.match(patterns.firstInstallmentDate)?.[1].trim();
+    if (!data.lastInstallmentDate) data.lastInstallmentDate = line.match(patterns.lastInstallmentDate)?.[1].trim();
+    if (!data.conventionName) data.conventionName = line.match(patterns.conventionName)?.[1].trim();
+    if (!data.conventionCnpj) data.conventionCnpj = line.match(patterns.conventionCnpj)?.[1].trim();
+  }
+
+  // Retorna os dados encontrados com valores padrão para o que faltou
+  return {
+    clientName: data.clientName || 'NOME NÃO ENCONTRADO',
+    cpf: data.cpf || '000.000.000-00',
+    rg: data.rg || '0000000000',
+    agencia: data.agencia || '0000',
+    conta: data.conta || '00.000',
+    loanValue: data.loanValue || '0,00',
+    installmentValue: data.installmentValue || '0,00',
+    installmentCount: data.installmentCount || '0',
+    firstInstallmentDate: data.firstInstallmentDate || '00/00/0000',
+    lastInstallmentDate: data.lastInstallmentDate || '00/00/0000',
+    proposalNumber: data.proposalNumber || '000000000',
+    conventionName: data.conventionName || 'CONVÊNIO NÃO IDENTIFICADO',
+    conventionCnpj: data.conventionCnpj || '00.000.000/0001-00',
+  };
 }
 
 function extractWithPatterns(text: string, patterns: RegExp[]): string | null {

@@ -37,7 +37,7 @@ export const LETTER_TEMPLATES: LetterTemplate[] = [
     id: 'ipam',
     name: 'INST MUNC PREV ASSIST DO MUNICIPIO IPAM',
     cnpj: '01.743.768/0001-18',
-    signatory: '',
+    signatory: 'IARA AMARAL LIMA LOPES',
     signatoryRole: 'INSTITUTO MUNICIPAL DE PREVIDÊNCIA E ASSIST IPAM',
     signatoryCpf: '048.597.213-14'
   }
