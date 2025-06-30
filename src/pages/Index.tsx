@@ -73,19 +73,24 @@ const Index = () => {
   const currentStepIndex = getStepIndex(currentStep);
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50 to-indigo-100">
+    <div className="min-h-screen bg-gradient-to-br from-slate-50 via-cyan-50 to-blue-100">
       {/* Header */}
       <div className="bg-white shadow-sm border-b">
         <div className="container mx-auto px-4 py-6">
           <div className="text-center">
             <div className="flex items-center justify-center mb-4">
-              <div className="bg-gradient-to-r from-blue-600 to-indigo-600 p-3 rounded-xl shadow-lg">
+              <div className="bg-gradient-to-r from-cyan-400 via-blue-500 to-blue-600 p-3 rounded-xl shadow-lg mr-4">
                 <FileText className="h-8 w-8 text-white" />
               </div>
-              <h1 className="text-3xl font-bold text-gray-900 ml-4">
-                Gerador de Cartas de Margem Consignável
-              </h1>
+              <img 
+                src="/lovable-uploads/7323f7c6-89e7-48fe-8d84-611c039b2381.png" 
+                alt="Agilit Logo" 
+                className="h-16 object-contain"
+              />
             </div>
+            <h1 className="text-3xl font-bold bg-gradient-to-r from-blue-600 via-cyan-600 to-green-500 bg-clip-text text-transparent mb-2">
+              Gerador de Cartas de Margem Consignável
+            </h1>
             <p className="text-lg text-gray-600 max-w-2xl mx-auto">
               Oferecemos o crédito que você precisa com a segurança e agilidade que merece!
             </p>
@@ -104,10 +109,10 @@ const Index = () => {
               
               return (
                 <div key={step.id} className="flex items-center">
-                  <div className={`flex flex-col items-center ${isActive ? 'text-blue-600' : isCompleted ? 'text-green-600' : 'text-gray-400'}`}>
+                  <div className={`flex flex-col items-center ${isActive ? 'text-blue-600' : isCompleted ? 'text-cyan-600' : 'text-gray-400'}`}>
                     <div className={`w-12 h-12 rounded-full flex items-center justify-center border-2 ${
-                      isCompleted ? 'bg-green-100 border-green-500' : 
-                      isActive ? 'bg-blue-100 border-blue-500' : 
+                      isCompleted ? 'bg-gradient-to-r from-cyan-100 to-green-100 border-cyan-500' : 
+                      isActive ? 'bg-gradient-to-r from-blue-100 to-cyan-100 border-blue-500' : 
                       'bg-gray-100 border-gray-300'
                     }`}>
                       {isCompleted ? (
@@ -121,7 +126,7 @@ const Index = () => {
                   </div>
                   {index < steps.length - 1 && (
                     <ArrowRight className={`w-6 h-6 mx-4 ${
-                      index < currentStepIndex ? 'text-green-500' : 'text-gray-400'
+                      index < currentStepIndex ? 'text-cyan-500' : 'text-gray-400'
                     }`} />
                   )}
                 </div>
@@ -132,7 +137,7 @@ const Index = () => {
 
         {/* Main Content */}
         <div className="max-w-4xl mx-auto">
-          <div className="bg-white rounded-2xl shadow-xl p-8">
+          <div className="bg-white rounded-2xl shadow-xl p-8 border border-cyan-100">
             {currentStep === 'upload' && (
               <FileUpload
                 onFileSelect={handleFileSelect}
@@ -169,13 +174,13 @@ const Index = () => {
 
         {/* Footer */}
         <div className="text-center mt-12">
-          <div className="bg-white rounded-lg shadow-sm p-6 max-w-2xl mx-auto">
+          <div className="bg-white rounded-lg shadow-sm p-6 max-w-2xl mx-auto border border-cyan-100">
             <p className="text-gray-600 font-medium">Sistema de automação para geração de cartas de margem consignável</p>
-            <p className="text-blue-600 font-semibold mt-2">AIACON Software</p>
+            <p className="bg-gradient-to-r from-blue-600 via-cyan-600 to-green-500 bg-clip-text text-transparent font-semibold mt-2">AIACON Software</p>
             <div className="flex justify-center items-center space-x-6 mt-4 text-sm text-gray-500">
-              <span>✓ Seguro e Confiável</span>
-              <span>✓ Rápido e Eficiente</span>
-              <span>✓ Fácil de Usar</span>
+              <span className="flex items-center"><span className="text-cyan-500 mr-1">✓</span>Seguro e Confiável</span>
+              <span className="flex items-center"><span className="text-blue-500 mr-1">✓</span>Rápido e Eficiente</span>
+              <span className="flex items-center"><span className="text-green-500 mr-1">✓</span>Fácil de Usar</span>
             </div>
           </div>
         </div>
