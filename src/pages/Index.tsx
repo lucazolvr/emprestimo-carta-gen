@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { FileText, ArrowRight, CheckCircle2, Upload, Search, Edit, FileDown } from 'lucide-react';
 import FileUpload from '@/components/FileUpload';
@@ -79,13 +78,10 @@ const Index = () => {
         <div className="container mx-auto px-4 py-6">
           <div className="text-center">
             <div className="flex items-center justify-center mb-4">
-              <div className="bg-gradient-to-r from-cyan-400 via-blue-500 to-blue-600 p-3 rounded-xl shadow-lg mr-4">
-                <FileText className="h-8 w-8 text-white" />
-              </div>
               <img 
                 src="/lovable-uploads/7323f7c6-89e7-48fe-8d84-611c039b2381.png" 
                 alt="Agilit Logo" 
-                className="h-16 object-contain"
+                className="h-20 object-contain"
               />
             </div>
             <h1 className="text-3xl font-bold bg-gradient-to-r from-blue-600 via-cyan-600 to-green-500 bg-clip-text text-transparent mb-2">
