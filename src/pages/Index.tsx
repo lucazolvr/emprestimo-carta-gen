@@ -64,8 +64,7 @@ const Index = () => {
             </h1>
           </div>
           <p className="text-xl text-gray-600 max-w-3xl mx-auto">
-            Automatize a criação de cartas de confirmação de reserva de margem consignável
-            a partir de propostas de empréstimo em PDF
+            Automatizção da criação de cartas de confirmação de reserva de margem consignável
           </p>
         </div>
 
@@ -139,7 +138,7 @@ const Index = () => {
         {/* Footer */}
         <div className="text-center mt-12 text-gray-500 text-sm">
           <p>Sistema de automação para geração de cartas de margem consignável</p>
-          <p>Suporte aos modelos: Prefeitura de São Mateus e IPAM</p>
+          <p>AIACON Software.</p>
         </div>
       </div>
     </div>
