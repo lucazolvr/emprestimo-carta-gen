@@ -62,9 +62,7 @@ Para adicionar um novo empregador ou modelo de carta:
     Encontre a constante LETTER_TEMPLATES.
 
     Adicione um novo objeto ao array, seguindo a estrutura existente:
-
-TypeScript
-
+```bash
 export const LETTER_TEMPLATES: LetterTemplate[] = [
   // ... outros convênios
   {
@@ -76,5 +74,5 @@ export const LETTER_TEMPLATES: LetterTemplate[] = [
     signatoryCpf: '123.456.789-00',
   },
 ];
-
+```
 O sistema usará o campo cnpj para selecionar automaticamente este modelo quando um PDF correspondente for processado.
