@@ -4,8 +4,7 @@
 
 Uma aplicação web robusta desenhada para automatizar e otimizar a criação de cartas de confirmação para empréstimos consignados. A ferramenta lê propostas em formato PDF, extrai os dados relevantes de forma inteligente e gera um documento final formatado, pronto para ser utilizado, eliminando erros manuais e acelerando o fluxo de trabalho.
 
-![Captura de Tela da Aplicação](https://i.imgur.com/k9f0bUa.png)
-*(Sugestão: substitua o link acima por uma captura de tela real da sua aplicação para um impacto visual maior)*
+![Captura de Tela da Aplicação](https://imgur.com/a/lc2Yc0V)
 
 ## 🌟 Funcionalidades Principais
 
@@ -38,20 +37,19 @@ Siga os passos abaixo para configurar e rodar a aplicação no seu ambiente de d
 ```bash
 git clone [URL_DO_SEU_REPOSITORIO]
 cd [NOME_DA_PASTA_DO_PROJETO]
-
-2. Instale as dependências:
-Bash
-
+```
+**2. Instale as dependências:**
+```bash
 npm install
-
-3. Inicie o servidor de desenvolvimento:
-Bash
-
+```
+**3. Inicie o servidor de desenvolvimento:**
+```bash
 npm run dev
+```
 
 A aplicação estará disponível em http://localhost:5173 (ou outra porta indicada no seu terminal).
 
-⚙️ Configuração e Customização
+⚙️ **Configuração e Customização**
 
 A aplicação foi projetada para ser facilmente extensível.
 
