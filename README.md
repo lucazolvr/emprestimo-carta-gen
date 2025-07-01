@@ -35,8 +35,8 @@ Siga os passos abaixo para configurar e rodar a aplicação no seu ambiente de d
 
 **1. Clone o repositório:**
 ```bash
-git clone [https://github.com/lucazolvr/emprestimo-carta-gen.git]
-cd [emprestimo-carta-gen]
+git clone https://github.com/lucazolvr/emprestimo-carta-gen.git
+cd emprestimo-carta-gen
 ```
 **2. Instale as dependências:**
 ```bash
