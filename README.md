@@ -1,73 +1,82 @@
-# Welcome to your Lovable project
+# Gerador de Cartas de Consignado
 
-## Project info
+![React](https://img.shields.io/badge/React-20232A?style=for-the-badge&logo=react&logoColor=61DAFB) ![TypeScript](https://img.shields.io/badge/TypeScript-007ACC?style=for-the-badge&logo=typescript&logoColor=white) ![Vite](https://img.shields.io/badge/Vite-646CFF?style=for-the-badge&logo=vite&logoColor=white) ![Tailwind CSS](https://img.shields.io/badge/Tailwind_CSS-38B2AC?style=for-the-badge&logo=tailwind-css&logoColor=white)
 
-**URL**: https://lovable.dev/projects/c7d1d3bc-5dda-4da4-b28d-44f902b5aba3
+Uma aplicação web robusta desenhada para automatizar e otimizar a criação de cartas de confirmação para empréstimos consignados. A ferramenta lê propostas em formato PDF, extrai os dados relevantes de forma inteligente e gera um documento final formatado, pronto para ser utilizado, eliminando erros manuais e acelerando o fluxo de trabalho.
 
-## How can I edit this code?
+![Captura de Tela da Aplicação](https://i.imgur.com/k9f0bUa.png)
+*(Sugestão: substitua o link acima por uma captura de tela real da sua aplicação para um impacto visual maior)*
 
-There are several ways of editing your application.
+## 🌟 Funcionalidades Principais
 
-**Use Lovable**
+* **Extração Inteligente de Dados:** Carregue um ficheiro PDF e a aplicação extrai automaticamente informações cruciais como nome do cliente, CPF, RG, valores do empréstimo, prazos e número da proposta.
+* **Sistema de Convênios Dinâmico:** Gerencie múltiplos convênios (empregadores) de forma centralizada. O sistema seleciona automaticamente o modelo de carta correto com base no CNPJ encontrado no PDF.
+* **Geração de PDF Profissional:** Cria documentos PDF com um layout limpo e profissional, utilizando alinhamento justificado, secções em negrito e dados posicionados corretamente para uma apresentação impecável.
+* **Pré-visualização Instantânea:** Permite que o utilizador reveja todo o conteúdo da carta em texto simples antes de se comprometer com a geração do PDF final, garantindo a precisão dos dados.
+* **Interface Moderna e Intuitiva:** Um design minimalista e focado na usabilidade, que guia o utilizador através do processo de três passos simples: carregar, gerar e descarregar.
 
-Simply visit the [Lovable Project](https://lovable.dev/projects/c7d1d3bc-5dda-4da4-b28d-44f902b5aba3) and start prompting.
+## 🚀 Stack Tecnológico
 
-Changes made via Lovable will be committed automatically to this repo.
+A aplicação foi construída com um conjunto de tecnologias modernas e eficientes:
 
-**Use your preferred IDE**
+* **Frontend:** [React](https://react.dev/) com [TypeScript](https://www.typescriptlang.org/) para uma base de código robusta e escalável.
+* **Build Tool:** [Vite](https://vitejs.dev/) para um ambiente de desenvolvimento extremamente rápido.
+* **Estilização:** [Tailwind CSS](https://tailwindcss.com/) para uma estilização rápida e customizável.
+* **Componentes UI:** [shadcn/ui](https://ui.shadcn.com/) como base para componentes reutilizáveis.
+* **Processamento de PDF (Leitura):** [PDF.js](https://mozilla.github.io/pdf.js/) da Mozilla para uma extração de texto confiável.
+* **Geração de PDF (Escrita):** [jsPDF](https://github.com/parallax/jsPDF) para a criação de documentos PDF no lado do cliente.
 
-If you want to work locally using your own IDE, you can clone this repo and push changes. Pushed changes will also be reflected in Lovable.
+## 🛠️ Como Executar o Projeto Localmente
 
-The only requirement is having Node.js & npm installed - [install with nvm](https://github.com/nvm-sh/nvm#installing-and-updating)
+Siga os passos abaixo para configurar e rodar a aplicação no seu ambiente de desenvolvimento.
 
-Follow these steps:
+**Pré-requisitos:**
+* [Node.js](https://nodejs.org/) (versão 18 ou superior)
+* [npm](https://www.npmjs.com/) ou [yarn](https://yarnpkg.com/)
 
-```sh
-# Step 1: Clone the repository using the project's Git URL.
-git clone <YOUR_GIT_URL>
+**1. Clone o repositório:**
+```bash
+git clone [URL_DO_SEU_REPOSITORIO]
+cd [NOME_DA_PASTA_DO_PROJETO]
 
-# Step 2: Navigate to the project directory.
-cd <YOUR_PROJECT_NAME>
+2. Instale as dependências:
+Bash
 
-# Step 3: Install the necessary dependencies.
-npm i
+npm install
 
-# Step 4: Start the development server with auto-reloading and an instant preview.
+3. Inicie o servidor de desenvolvimento:
+Bash
+
 npm run dev
-```
 
-**Edit a file directly in GitHub**
+A aplicação estará disponível em http://localhost:5173 (ou outra porta indicada no seu terminal).
 
-- Navigate to the desired file(s).
-- Click the "Edit" button (pencil icon) at the top right of the file view.
-- Make your changes and commit the changes.
+⚙️ Configuração e Customização
 
-**Use GitHub Codespaces**
+A aplicação foi projetada para ser facilmente extensível.
 
-- Navigate to the main page of your repository.
-- Click on the "Code" button (green button) near the top right.
-- Select the "Codespaces" tab.
-- Click on "New codespace" to launch a new Codespace environment.
-- Edit files directly within the Codespace and commit and push your changes once you're done.
+Adicionar um Novo Convênio
 
-## What technologies are used for this project?
+Para adicionar um novo empregador ou modelo de carta:
 
-This project is built with:
+    Abra o arquivo src/types/index.ts.
 
-- Vite
-- TypeScript
-- React
-- shadcn-ui
-- Tailwind CSS
+    Encontre a constante LETTER_TEMPLATES.
 
-## How can I deploy this project?
+    Adicione um novo objeto ao array, seguindo a estrutura existente:
 
-Simply open [Lovable](https://lovable.dev/projects/c7d1d3bc-5dda-4da4-b28d-44f902b5aba3) and click on Share -> Publish.
+TypeScript
 
-## Can I connect a custom domain to my Lovable project?
+export const LETTER_TEMPLATES: LetterTemplate[] = [
+  // ... outros convênios
+  {
+    id: '3', // Use um ID único
+    name: 'NOME DO NOVO CONVÊNIO',
+    cnpj: '00.000.000/0001-00', // CNPJ exato que será lido do PDF
+    signatory: 'Nome do Responsável pela Assinatura',
+    signatoryRole: 'Cargo do Responsável',
+    signatoryCpf: '123.456.789-00',
+  },
+];
 
-Yes, you can!
-
-To connect a domain, navigate to Project > Settings > Domains and click Connect Domain.
-
-Read more here: [Setting up a custom domain](https://docs.lovable.dev/tips-tricks/custom-domain#step-by-step-guide)
+O sistema usará o campo cnpj para selecionar automaticamente este modelo quando um PDF correspondente for processado.
