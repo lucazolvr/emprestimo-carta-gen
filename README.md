@@ -4,7 +4,7 @@
 
 Uma aplicação web robusta desenhada para automatizar e otimizar a criação de cartas de confirmação para empréstimos consignados. A ferramenta lê propostas em formato PDF, extrai os dados relevantes de forma inteligente e gera um documento final formatado, pronto para ser utilizado, eliminando erros manuais e acelerando o fluxo de trabalho.
 
-![Captura de Tela da Aplicação](https://imgur.com/a/lc2Yc0V)
+![Captura de Tela da Aplicação](https://i.imgur.com/fg5oUf3.png)
 
 ## 🌟 Funcionalidades Principais
 
