@@ -113,7 +113,7 @@ export function parseExtractedLines(lines: string[]): ProposalData {
             }
         }
 
-        // --- Lógica para dados na mesma linha (como no seu código original) ---
+      
         
         const patterns = {
             proposalNumber: /Número da proposta:\s*(\d+)/i,
